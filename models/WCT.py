@@ -1,48 +1,45 @@
 import torch
 
 
-def whiten_and_color(content_feats, style_feats, beta=1.0):
-    content = content_feats.squeeze(0)
-    channels, height, width = content.shape
-    content = content.reshape(channels, -1)
+def whiten_and_color(content_feature, style_feature, beta=1.0):
+    batch_size, c, ch, cw = content_feature.shape
+    content_feature = content_feature.view(batch_size, c, -1)
+    content_mean = torch.mean(content_feature, 2, keepdim=True)
+    content_feature = content_feature - content_mean
 
-    content_mean = torch.mean(content, dim=1, keepdim=True)
-    content -= content_mean
-    content_cov = torch.mm(content, content.t()) / (height * width - 1)
-    u_c, e_c, v_c = torch.svd(content_cov)
+    content_cov = torch.bmm(content_feature, content_feature.transpose(1, 2)) / (ch * cw - 1)
+    content_u, content_e, content_v = torch.svd(content_cov)
 
-    rank_c = channels
-    for i in range(channels):
-        if e_c[i] < 0.00001:
-            rank_c = i
+    k_c = c
+    for i in range(c):
+        if content_e[:, i].min() < 0.00001:
+            k_c = i
             break
-    content_sqrt_eigenvalues = e_c[:rank_c].pow(-0.5)
+    content_d = content_e[:, :k_c].pow(-0.5)
 
-    whitening_matrix = torch.mm(v_c[:, :rank_c], torch.diag(content_sqrt_eigenvalues))
-    whitening_matrix = torch.mm(whitening_matrix, v_c[:, :rank_c].t())
-    whitened_content = torch.mm(whitening_matrix, content)
+    w_step1 = torch.bmm(content_v[:, :, :k_c], torch.diag_embed(content_d))
+    w_step2 = torch.bmm(w_step1, content_v[:, :, :k_c].transpose(1, 2))
+    whitened = torch.bmm(w_step2, content_feature)
 
-    style = style_feats.squeeze(0)
-    channels, style_height, style_width = style.shape
-    style = style.reshape(channels, -1)
+    style_feature = style_feature.view(batch_size, c, -1)
+    style_mean = torch.mean(style_feature, 2, keepdim=True)
+    style_feature = style_feature - style_mean
 
-    style_mean = torch.mean(style, dim=1, keepdim=True)
-    style -= style_mean
-    style_cov = torch.mm(style, style.t()) / (style_height * style_width - 1)
-    u_s, e_s, v_s = torch.svd(style_cov)
+    style_cov = torch.bmm(style_feature, style_feature.transpose(1, 2)) / (ch * cw - 1)
+    style_u, style_e, style_v = torch.svd(style_cov)
 
-    rank_s = channels
-    for i in range(channels):
-        if e_s[i] < 0.00001:
-            rank_s = i
+    k_s = c
+    for i in range(c):
+        if style_e[:, i].min() < 0.00001:
+            k_s = i
             break
-    style_sqrt_eigenvalues = e_s[:rank_s].pow(0.5)
+    style_d = style_e[:, :k_s].pow(0.5)
 
-    coloring_matrix = torch.mm(v_s[:, :rank_s], torch.diag(style_sqrt_eigenvalues))
-    coloring_matrix = torch.mm(coloring_matrix, v_s[:, :rank_s].t())
-    colored_content = torch.mm(coloring_matrix, whitened_content) + style_mean
+    c_step1 = torch.bmm(style_v[:, :, :k_s], torch.diag_embed(style_d))
+    c_step2 = torch.bmm(c_step1, style_v[:, :, :k_s].transpose(1, 2))
+    colored = torch.bmm(c_step2, whitened) + style_mean
 
-    final_colored_feats = colored_content.reshape(channels, height, width).unsqueeze(0).float()
+    colored_feature = colored.view(batch_size, c, ch, cw).float()
 
-    final_colored_feats = beta * final_colored_feats + (1.0 - beta) * content_feats
-    return final_colored_feats
+    colored_feature = beta * colored_feature + (1.0 - beta) * content_feature.view(batch_size, c, ch, cw)
+    return colored_feature
