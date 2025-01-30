@@ -38,4 +38,4 @@ class VGGEncoder(nn.Module):
         if output_last_feature:
             return fused_feature
         else:
-            return h1, h2, h3, h4
+            return h1, h2, fused_h2_h3, fused_feature
