@@ -1,86 +1,76 @@
+import warnings
+
+warnings.simplefilter("ignore", UserWarning)
 import os
 import argparse
-from PIL import Image
 import torch
-from torchvision import transforms
+from torch.utils.data import DataLoader
 from torchvision.utils import save_image
+from dataset import PreprocessDataset, denorm
 from model import Model
-
-
-normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])
-
-trans = transforms.Compose([transforms.ToTensor(),
-                            normalize])
-
-
-def denorm(tensor, device):
-    std = torch.Tensor([0.229, 0.224, 0.225]).reshape(-1, 1, 1).to(device)
-    mean = torch.Tensor([0.485, 0.456, 0.406]).reshape(-1, 1, 1).to(device)
-    res = torch.clamp(tensor * std + mean, 0, 1)
-    return res
-
 
 def main():
     parser = argparse.ArgumentParser(description='PAAEST by Pytorch')
-    parser.add_argument('--content', '-c', type=str, default=None,
-                        help='Content image path e.g. content.jpg')
-    parser.add_argument('--style', '-s', type=str, default=None,
-                        help='Style image path e.g. image.jpg')
-    parser.add_argument('--output_name', '-o', type=str, default=None,
-                        help='Output path for generated image, no need to add ext, e.g. out')
+    parser.add_argument('--content_folder', '-cf', type=str, default='./test_content',
+                        help='Content images folder path')
+    parser.add_argument('--style_folder', '-sf', type=str, default='./test_style',
+                        help='Style images folder path')
+    parser.add_argument('--output_folder', '-of', type=str, default='./output',
+                        help='Output folder path for generated images')
     parser.add_argument('--alpha', '-a', type=float, default=1,
-                        help='alpha control the fusion degree in Adain')
+                        help='alpha control the fusion degree')
+    parser.add_argument('--beta', type=float, default=1.0,
+                        help='beta control the degree of WCT')
     parser.add_argument('--gpu', '-g', type=int, default=0,
-                        help='GPU ID(nagative value indicate CPU)')
-    parser.add_argument('--model_state_path', type=str, default='./model_state.pth',
-                        help='save directory for result and loss')
+                        help='GPU ID (negative value indicates CPU)')
+    parser.add_argument('--model_state_path', type=str, default='./result/model_state/100_epoch.pth',
+                        help='Path to the model state file')
 
     args = parser.parse_args()
 
-    # set device on GPU if available, else CPU
+    os.makedirs(args.output_folder, exist_ok=True)
+    os.makedirs(os.path.join(args.output_folder, 'transfer1'), exist_ok=True)
+    os.makedirs(os.path.join(args.output_folder, 'transfer2'), exist_ok=True)
+
     if torch.cuda.is_available() and args.gpu >= 0:
         device = torch.device(f'cuda:{args.gpu}')
         print(f'# CUDA available: {torch.cuda.get_device_name(0)}')
     else:
         device = 'cpu'
 
-    # set model
-    model = Model()
+    model = Model().to(device)
     if args.model_state_path is not None:
-        model.load_state_dict(torch.load(args.model_state_path, map_location=lambda storage, loc: storage))
-    model = model.to(device)
+        model.load_state_dict(torch.load(args.model_state_path, map_location=device))
+    model.eval()
 
-    c = Image.open(args.content)
-    s = Image.open(args.style)
-    c_tensor = trans(c).unsqueeze(0).to(device)
-    s_tensor = trans(s).unsqueeze(0).to(device)
-    with torch.no_grad():
-        out = model.generate(c_tensor, s_tensor, args.alpha)
-    
-    out = denorm(out, device)
+    dataset = PreprocessDataset(args.content_folder, args.style_folder)
+    data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 
-    if args.output_name is None:
-        c_name = os.path.splitext(os.path.basename(args.content))[0]
-        s_name = os.path.splitext(os.path.basename(args.style))[0]
-        args.output_name = f'{c_name}_{s_name}'
+    for i, (content, style) in enumerate(data_loader):
+        content = content.to(device)
+        style = style.to(device)
 
-    save_image(out, f'./output/{args.output_name}.jpg', nrow=1)
-    o = Image.open(f'./output/{args.output_name}.jpg')
+        with torch.no_grad():
+            out = model.generate(content, style, args.alpha, args.beta)
 
-    demo = Image.new('RGB', (c.width * 2, c.height))
-    o = o.resize(c.size)
-    s = s.resize((i // 4 for i in c.size))
+        out = denorm(out, device)
 
-    demo.paste(c, (0, 0))
-    demo.paste(o, (c.width, 0))
-    demo.paste(s, (c.width, c.height - s.height))
-    demo.save(f'./output/{args.output_name}_style_transfer_demo.jpg', quality=95)
+        with torch.no_grad():
+            out1 = model.generate(out, content, args.alpha, args.beta)
 
-    o.paste(s,  (0, o.height - s.height))
-    o.save(f'./output/{args.output_name}_with_style_image.jpg', quality=95)
+        out1 = denorm(out1, device)
 
-    print(f'result saved into files starting with {args.output_name}')
+        content_name = os.path.splitext(os.path.basename(dataset.images_pairs[i][0]))[0]
+        style_name = os.path.splitext(os.path.basename(dataset.images_pairs[i][1]))[0]
+        if content_name == style_name:
+            output_name = str(content_name)
+        else:
+            output_name = f'{content_name}_{style_name}'
+
+        save_image(out, os.path.join(args.output_folder, 'transfer1', f'{output_name}.jpg'), nrow=1)
+        save_image(out1, os.path.join(args.output_folder, 'transfer2', f'{output_name}.jpg'), nrow=1)
+
+        print(f'Result saved into file: {output_name}.jpg')
 
 
 if __name__ == '__main__':
