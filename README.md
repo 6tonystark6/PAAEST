@@ -65,10 +65,10 @@ The SSIM value is not calculated between the original content image and the styl
 
 | Model | SSIM |
 | ------ | ------ |
-| ChipGAN | 0.891 |
-| AnimeGAN | 0.913 |
-| QS-Attn | 0.916 |
-| PAAEST | 0.928 |
+| ChipGAN | 0.687 |
+| AnimeGAN | 0.703 |
+| QS-Attn | 0.710 |
+| PAAEST | 0.718 |
 
 # Reference
 
