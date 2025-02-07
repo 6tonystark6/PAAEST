@@ -13,7 +13,6 @@ normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
 
 trans = transforms.Compose([
     transforms.RandomResizedCrop(256, scale=(0.8, 1.0), ratio=(0.75, 1.33)),
-    transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     normalize
 ])
