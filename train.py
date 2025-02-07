@@ -18,7 +18,7 @@ from model import Model
 
 def main():
     parser = argparse.ArgumentParser(description='PAAEST by Pytorch')
-    parser.add_argument('--batch_size', '-batch_size', type=int, default=16,
+    parser.add_argument('--batch_size', '-batch_size', type=int, default=8,
                         help='Number of images in each mini-batch')
     parser.add_argument('--epoch', '-epoch', type=int, default=100,
                         help='Number of sweeps over the dataset to train')
@@ -28,9 +28,9 @@ def main():
                         help='beta control the degree of WCT')
     parser.add_argument('--gpu', '-gpu', type=int, default=0,
                         help='GPU ID(nagative value indicate CPU)')
-    parser.add_argument('--learning_rate', '-lr', type=int, default=2e-6,
+    parser.add_argument('--learning_rate', '-lr', type=int, default=5e-5,
                         help='learning rate for Adam')
-    parser.add_argument('--image_save', type=int, default=100,
+    parser.add_argument('--image_save', type=int, default=50,
                         help='Interval of snapshot to generate image')
     parser.add_argument('--train_content_dir', type=str, default='train_content',
                         help='content images directory for train')
