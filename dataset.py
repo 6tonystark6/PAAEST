@@ -1,20 +1,22 @@
 import os
 import glob
 import numpy as np
-from tqdm import tqdm
-import torch
-from torch.utils.data import Dataset
-from torchvision import transforms
-from skimage import io, transform
 from PIL import Image
+import torch
+import torchvision.transforms as transforms
+from torch.utils.data import Dataset
+from skimage import io, transform
+from tqdm import tqdm
 
 normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])
 
-trans = transforms.Compose([transforms.RandomCrop(256),
-                            transforms.ToTensor(),
-                            normalize])
-
+trans = transforms.Compose([
+    transforms.RandomResizedCrop(256, scale=(0.8, 1.0), ratio=(0.75, 1.33)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    normalize
+])
 
 def denorm(tensor, device):
     tensor = tensor.to(device)
@@ -22,7 +24,6 @@ def denorm(tensor, device):
     mean = torch.Tensor([0.485, 0.456, 0.406]).reshape(-1, 1, 1).to(device)
     res = torch.clamp(tensor * std + mean, 0, 1)
     return res
-
 
 class PreprocessDataset(Dataset):
     def __init__(self, content_dir, style_dir, transforms=trans):
@@ -47,7 +48,7 @@ class PreprocessDataset(Dataset):
         for i in tqdm(os.listdir(source_dir)):
             filename = os.path.basename(i)
             try:
-                image_path = os.path.join(source_dir, i)  # 确保路径正确
+                image_path = os.path.join(source_dir, i)
                 image = io.imread(image_path)
                 if len(image.shape) == 3 and image.shape[-1] == 3:
                     H, W, _ = image.shape
@@ -62,8 +63,8 @@ class PreprocessDataset(Dataset):
                     image = transform.resize(image, (H, W), mode='reflect', anti_aliasing=True)
                     image = (image * 255).astype(np.uint8)
                     io.imsave(os.path.join(target_dir, filename), image)
-            except:
-                continue
+            except Exception as e:
+                print(f"Error processing {image_path}: {e}")
 
     def __len__(self):
         return len(self.images_pairs)
