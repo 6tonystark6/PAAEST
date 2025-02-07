@@ -1,8 +1,8 @@
 # PAAEST
 
-Pytorch implementation of Progressive Artistic Aesthetic Enhancement For Chinese Ink Painting Style Transfer(ECAI2024)
+Pytorch implementation of Progressive Artistic Aesthetic Enhancement For Chinese Ink Painting Style Transfer (ECAI2024)
 
-# Architecture
+# Structure
 
 ```
 project-root/
