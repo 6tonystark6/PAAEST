@@ -1,6 +1,6 @@
 # PAAEST
 
-Pytorch implementation of Progressive Artistic Aesthetic Enhancement For Chinese Ink Painting Style Transfer (ECAI2024)
+Pytorch implementation of Progressive Artistic Aesthetic Enhancement For Chinese Ink Painting Style Transfer (ECAI2024) By Chihan Huang.
 
 # Structure
 
@@ -37,21 +37,21 @@ project-root/
 
 # Use
 
-1. You can get the style data [here](https://theme.npm.edu.tw/opendata/) and split them into the folder train_content and test_content, and content data [here](https://github.com/koishi70/Landscape-Dataset) and split them into the folder train_style and test_style.
+1. You can get the style data [here](https://theme.npm.edu.tw/opendata/) and split them into the folder train_content and test_content at 8:2, and content data [here](https://github.com/koishi70/Landscape-Dataset) and split them into the folder train_style and test_style at 8:2.
 
 2. You can run the following command to train the model, and you can adjust the batch size, learning rate, gpu, etc of your custom model here.
 
 ```Python
-python train.py --batch_size 8 --epoch 60 --learning_rate 5e-5 --train_content_dir './train_content' --train_style_dir './train_style' --save_dir './result'
+python train.py --batch_size 8 --epoch 80 --learning_rate 5e-5 --train_content_dir './train_content' --train_style_dir './train_style' --save_dir './result'
 ```
 
-3. You can run the following command to generate the test images into ./output.
+3. You can run the following command to generate the test images into ./output. The transfer1 folder contains stylized images, and the transfer2 folder contains the regenerated content images using stylized images as content images. The FID and KID are calculated between content images and stylized images, and PSNR and SSIM are calculated between content images and regenerated content images.
 
 ```Python
 python test.py -c './test_content' -s './test_style' -o './output'
 ```
 
-4. Then run the following command to get the results.
+4. Then run the following command to get the FID, KID, PSNR, SSIM results.
 
 ```Python
 python evaluate.py
@@ -68,7 +68,7 @@ The SSIM value is not calculated between the original content image and the styl
 | ChipGAN | 0.687 |
 | AnimeGAN | 0.703 |
 | QS-Attn | 0.710 |
-| PAAEST | 0.718 |
+| PAAEST | 0.776 |
 
 # Reference
 
