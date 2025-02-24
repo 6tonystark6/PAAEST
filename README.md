@@ -48,7 +48,7 @@ python train.py --batch_size 8 --epoch 100 --learning_rate 5e-5 --train_content_
 3. You can run the following command to generate the test images into ./output. The transfer1 folder contains stylized images, and the transfer2 folder contains the regenerated content images using stylized images as content images. The FID and KID are calculated between content images and stylized images, and PSNR and SSIM are calculated between content images and regenerated content images.
 
 ```Python
-python test.py -c './test_content' -s './test_style' -o './output'
+python test.py -cf './test_content' -sf './test_style' -of './output'
 ```
 
 4. Then run the following command to get the FID, KID, PSNR, SSIM results.
