@@ -18,6 +18,7 @@ project-root/
 ├── dataset.py          # instruction on how to process the image data
 ├── evaluate.py         # evaluate the test output images to get the results
 ├── model.py            # model utilizing the model components
+├── split_train_test.py # split the data into train and test folder
 ├── README.md           # project instructions
 ├── test.py             # test the trained model to get output images
 ├── train.py            # train the model to get loss curve and checkpoints
