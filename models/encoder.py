@@ -1,6 +1,6 @@
 from torch import nn
 from torchvision.models import vgg19
-from attention import AttentionFusion
+from models.attention import AttentionFusion
 
 
 class VGGEncoder(nn.Module):
