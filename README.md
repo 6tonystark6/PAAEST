@@ -42,7 +42,7 @@ project-root/
 2. You can run the following command to train the model, and you can adjust the batch size, learning rate, gpu, etc of your custom model here.
 
 ```Python
-python train.py --batch_size 8 --epoch 80 --learning_rate 5e-5 --train_content_dir './train_content' --train_style_dir './train_style' --save_dir './result'
+python train.py --batch_size 8 --epoch 100 --learning_rate 5e-5 --train_content_dir './train_content' --train_style_dir './train_style' --save_dir './result'
 ```
 
 3. You can run the following command to generate the test images into ./output. The transfer1 folder contains stylized images, and the transfer2 folder contains the regenerated content images using stylized images as content images. The FID and KID are calculated between content images and stylized images, and PSNR and SSIM are calculated between content images and regenerated content images.
